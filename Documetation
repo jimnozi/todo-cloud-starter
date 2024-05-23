@@ -261,3 +261,7 @@ By ensuring that package-lock.json is correctly generated and used, you can avoi
 
 
 docker run -it --rm jimnozi/todo-cache-ingestion:1.0 sh
+
+
+Problem Face while building the docker compose for the prudction 
+The start.sh refuses to start in the todo-search-ingestion. I change the start.sh permission to 664 and also the start command to "command: sh /home/node/app/start.sh" 

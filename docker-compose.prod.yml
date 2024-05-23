@@ -1,11 +1,18 @@
 version: "2.27.0"
 
 services:
+  todo-postgres:
+    container_name: todo-postgres
+    build:
+      dockerfile: Dockfile.prod
+    image: jimnozi/todo-postgres:1.0
+
   todo-cache-ingestion:
     build:
       context: todo-cache-ingestion
       dockerfile: ../Dockerfile.nodejs.prod
     image: jimnozi/todo-cache-ingestion:1.0
+    command: sh /home/node/app/start.sh
       
 
   todo-cache-service:
