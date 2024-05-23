@@ -1,0 +1,263 @@
+ci = means "clean install"
+
+###########################################
+RUN npm ci --only=production
+
+This command installs the project's dependencies using npm ci. Here's a breakdown of its components:
+
+    npm ci:
+        Stands for "clean install".
+        This command is intended for use in automated environments such as CI/CD systems.
+        It installs dependencies from the package-lock.json file.
+        It removes the node_modules folder if it exists and installs a clean set of dependencies.
+        It ensures that the exact versions in the package-lock.json are installed, which can help avoid versioning issues and ensure reproducibility.
+
+    --only=production:
+        This flag tells npm to only install dependencies listed under the dependencies section in package.json.
+        It skips installing devDependencies, which are typically used for development and testing purposes and are not needed in production.
+        This results in a smaller node_modules directory and potentially faster build times since fewer dependencies are installed.
+
+COPY --chown=node:node . .
+
+This command copies files from the host machine into the Docker image while setting the ownership of the copied files. Here's a breakdown:
+
+    COPY:
+        This Dockerfile instruction copies files and directories from the source path (on the host machine) to the destination path (in the Docker image).
+
+    --chown=node:node:
+        --chown stands for "change owner".
+        This option allows you to set the ownership of the copied files.
+        In this case, it sets the owner and group to node.
+        node is a user created by the official Node.js Docker image, typically for running the application securely as a non-root user.
+
+    . (first dot):
+        Represents the source directory, which is the current directory where the Dockerfile is located on the host machine.
+
+    . (second dot):
+        Represents the destination directory inside the Docker image, which is the current working directory (WORKDIR /home/node/app).
+
+By using --chown=node:node, you ensure that all files copied into the Docker image will have the appropriate ownership. This is important for security and ensuring that the application can access and modify files as needed without requiring root privileges.
+
+#########################################################################
+
+here RUN npm ci --only=production, does it mean the production depencies must have been mentioned in the package.json file? or how does the ci will know which is for production or not 
+ChatGPT
+
+Yes, the command RUN npm ci --only=production relies on the package.json file to determine which dependencies are for production. In a typical package.json file, dependencies are categorized into two main sections: dependencies and devDependencies.
+
+    dependencies: These are the packages that your application needs to run in a production environment. They are essential for the core functionality of your application.
+
+    devDependencies: These are the packages that are only needed for development and testing purposes. They might include tools like linters, testing frameworks, build tools, etc.
+
+Here is an example of a package.json file with both dependencies and devDependencies:
+
+json
+
+{
+  "name": "example-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongoose": "^5.9.7"
+  },
+  "devDependencies": {
+    "mocha": "^8.0.1",
+    "chai": "^4.2.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "mocha"
+  }
+}
+
+In this file:
+
+    express and mongoose are listed under dependencies, indicating they are needed for the application to run.
+    mocha and chai are listed under devDependencies, indicating they are needed only for development and testing.
+
+How npm ci --only=production Works
+
+When you run npm ci --only=production, npm will:
+
+    Read package-lock.json: npm ci installs exactly what is listed in the package-lock.json file. This ensures that you have a reproducible build with the exact versions of the dependencies.
+    Install Only Production Dependencies: The --only=production flag tells npm to skip installing the devDependencies. It will only install the packages listed under dependencies in the package.json.
+
+Therefore, for npm ci --only=production to work as expected, you must have your production dependencies listed under the dependencies section in your package.json. If a package needed for production is mistakenly listed under devDependencies, it will not be installed when you use this command.
+
+This distinction allows you to keep your Docker image lean by excluding unnecessary development tools, which can be substantial in size and can pose potential security risks if included in a production environment.
+
+
+###########################################################################################
+SPecifi=zing the folder to build from and the docker file to use i.e 
+#############################
+docker build ./todo/api/gateway -f Dockerfile.nodejs.prod -t todo-api-gateway:1.0 
+
+
+#######################################################################################################
+
+Explanation 
+Explanation of RUN adduser -S -D -g "" -G www-data www-data
+
+This command adds a new user in the nginx container with specific options. Let's break down each part:
+
+    adduser: This is the command to add a new user.
+
+    -S: This flag creates a system account. System accounts are used for running services and daemons and typically do not have home directories or login capabilities.
+
+    -D: This flag disables password login for the user. It creates the user without prompting for a password.
+
+    -g "": This sets the GECOS field (full name, etc.) to an empty string. The GECOS field is a set of information used in Unix-like systems to provide personal details about the user.
+
+    -G www-data: This adds the user to the www-data group. The www-data group is commonly used for web server processes.
+
+    www-data: This is the username being created.
+
+In summary, the command RUN adduser -S -D -g "" -G www-data www-data creates a system user www-data with no password and adds it to the www-data group.
+Explanation of RUN touch /var/run/nginx.pid
+
+    touch /var/run/nginx.pid: The touch command is used to create an empty file if it does not already exist. In this case, it creates the file /var/run/nginx.pid. The .pid file typically stores the Process ID (PID) of a running service, in this case, nginx.
+
+Necessity of RUN touch /var/run/nginx.pid
+
+The necessity of RUN touch /var/run/nginx.pid in modern Docker setups can be debated:
+
+    Reason for Use:
+        The nginx.pid file may be required for managing the nginx process, such as sending signals to the correct process or for other process management tasks.
+        Ensuring the file exists and is owned by the correct user can help avoid permission issues when nginx tries to write to this file at runtime.
+
+    Obsolescence:
+        In many modern Docker setups, it may not be strictly necessary to create this file manually because the nginx process can create it on startup.
+        However, ensuring the correct permissions can still be important, especially if the container runs as a non-root user.
+
+
+
+To Push to Docker repo i.e Docker hub
+###############################################
+You will need to rebuild the image. 
+This time with you username  on dockerhub
+docker build ./todo-api-gateway -f Dockerfile.nodejs.prod -t jimnozi/todo-api-gateway:1.0   .... here my name is jimnozi
+
+docker push jimnozi/todo-api-gateway:1.0
+
+Using Docker COmpose to build a prodution image
+#######################################################
+you can create another file called docker-compose-prod-yml and copy what you have in the other one i.e the dev and paste it there. YOu can remove what is the same i.e you only need to work on what changes during the production i.e stuff that end with .dev and you want to change to .prod
+
+so to overwrite what is in the previous yaml we use
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build  ... what is in docker-compose.prod.yml will overwrite what is in docker-compose.yml
+
+
+###########################
+docker builder prune --all
+
+
+#####################################################################################################################################################
+######################################################################################################################################################
+ => ERROR [todo-cache-service 7/8] RUN npm ci --only=production 
+ ################################################################################
+
+ Certainly! Let's break down the roles and importance of package-lock.json and how npm install and npm ci interact with it:
+The Roles of package.json and package-lock.json
+
+    package.json:
+        This file lists the direct dependencies of your project. It's the main file where you define which libraries your project depends on, the versions you prefer, and any other metadata about your project.
+        Example snippet:
+
+        json
+
+    {
+      "name": "your-project",
+      "version": "1.0.0",
+      "scripts": {
+        "start": "node index.js"
+      },
+      "dependencies": {
+        "express": "^4.17.1"
+      },
+      "devDependencies": {
+        "mocha": "^8.3.2"
+      }
+    }
+
+package-lock.json:
+
+    This file is automatically generated by npm and contains the exact versions of all dependencies (including sub-dependencies) that were installed.
+    It ensures that the same dependency tree is installed every time npm install is run, providing consistency across different environments (e.g., development, CI, production).
+    Example snippet:
+
+    json
+
+        {
+          "name": "your-project",
+          "version": "1.0.0",
+          "lockfileVersion": 1,
+          "requires": true,
+          "dependencies": {
+            "express": {
+              "version": "4.17.1",
+              "resolved": "https://registry.npmjs.org/express/-/express-4.17.1.tgz",
+              "integrity": "sha512-fo..."
+            },
+            "mocha": {
+              "version": "8.3.2",
+              "resolved": "https://registry.npmjs.org/mocha/-/mocha-8.3.2.tgz",
+              "integrity": "sha512-Ev..."
+            }
+          }
+        }
+
+Commands Interaction
+
+    npm install:
+        When run without a package-lock.json file, it generates one based on the package.json.
+        If package-lock.json already exists, npm install uses it to install the exact versions listed.
+        It updates the package-lock.json if there are any changes in the dependencies listed in package.json.
+
+    npm ci:
+        This command is specifically designed for continuous integration/continuous deployment (CI/CD) environments.
+        It installs dependencies based on the exact versions listed in package-lock.json.
+        If package-lock.json is missing or out of sync with package.json, it throws an error. It ensures a repeatable build process.
+        It is faster than npm install because it skips certain steps like generating a new package-lock.json and updating package versions.
+
+Importance of package-lock.json
+
+    Consistency: Ensures that everyone working on the project (or any CI/CD systems) has the same versions of dependencies installed.
+    Security: Helps in locking down dependencies to known, secure versions.
+    Performance: npm ci is faster than npm install for large projects because it uses package-lock.json to install dependencies directly.
+
+Your Dockerfile Scenario
+
+In your Dockerfile, you use npm ci --only=production. This command:
+
+    Requires a package-lock.json file that is in sync with your package.json.
+    Uses package-lock.json to install the exact versions of your production dependencies, ignoring devDependencies.
+
+If package-lock.json is not present or out of sync, npm ci will fail. This is why running npm install locally to generate or update package-lock.json is important before building your Docker image.
+Steps to Ensure Correct Build
+
+    Generate package-lock.json Locally:
+        Run npm install locally to ensure that package-lock.json is generated and up-to-date.
+
+    Add package-lock.json to Your Version Control:
+        Ensure that package-lock.json is committed to your version control system (e.g., Git).
+
+    Update Dockerfile:
+        Make sure your Dockerfile copies both package.json and package-lock.json:
+
+        dockerfile
+
+    COPY ./package*.json ./
+
+Rebuild Docker Compose:
+
+    Run the Docker Compose build command again:
+
+    sh
+
+        docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+
+By ensuring that package-lock.json is correctly generated and used, you can avoid issues related to dependency inconsistencies and make your builds more reliable.                                                                                 
+
+
+docker run -it --rm jimnozi/todo-cache-ingestion:1.0 sh

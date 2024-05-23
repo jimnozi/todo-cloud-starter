@@ -1,0 +1,68 @@
+version: "2.27.0"
+
+services:
+  todo-cache-ingestion:
+    build:
+      context: todo-cache-ingestion
+      dockerfile: ../Dockerfile.nodejs.prod
+    image: jimnozi/todo-cache-ingestion:1.0
+      
+
+  todo-cache-service:
+    container_name: todo-cache-service
+    build:
+      dockerfile: ../Dockerfile.nodejs.prod
+    image: jimnozi/todo-cache-service:1.0
+           
+
+  todo-search-ingestion:
+    container_name: todo-search-ingestion
+    build:
+      dockerfile: ../Dockerfile.nodejs.prod
+    image: jimnozi/todo-search-ingestion:1.0
+    command: sh /home/node/app/start.sh
+        
+
+  todo-search-service:
+    container_name: todo-search-service
+    build:
+      dockerfile: ../Dockerfile.nodejs.prod
+    image: jimnozi/todo-search-service:1.0
+    command: sh /home/node/app/start.sh
+    
+
+  todo-storage-ingestion:
+    container_name: todo-storage-ingestion
+    build:
+      dockerfile: ../Dockerfile.nodejs.prod
+    image: jimnozi/todo-storage-ingestion:1.0
+    command: sh /home/node/app/start.sh
+   
+
+  todo-storage-service:
+    container_name: todo-storage-service
+    build:
+      dockerfile: ../Dockerfile.nodejs.prod
+    image: jimnozi/todo-storage-service:1.0
+        
+
+  todo-api-gateway:
+    container_name: todo-api-gateway
+    build:
+      dockerfile: ../Dockerfile.nodejs.prod
+    image: jimnozi/todo-api-gateway:1.0
+    command: sh /home/node/app/start.sh
+    
+
+  todo-view:
+    container_name: todo-view
+    build:
+      dockerfile: Dockerfile.prod
+    image: jimnozi/todo-view:1.0
+    ports:
+      - 4201:8080
+    
+  todo-proxy:
+    image: jimnozi/todo-proxy:1.0
+        
+
